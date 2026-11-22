@@ -1,36 +1,61 @@
-<img src="art/Siftmark.png" width="112" height="112" alt="Siftmark icon">
+<img src="art/Siftmark.png" alt="Siftmark’s platinum disk-drive icon" width="96" height="96">
 
 # Siftmark
 
-Siftmark shows which files and folders occupy space on your Mac. Choose a folder to compare allocated sizes, inspect a subfolder, or reveal an item in Finder. The native macOS window uses a Rust scanner that runs locally.
+Find the folder that ate your disk space. Siftmark is a small native Mac app that measures a folder, shows where its bytes went, and lets you review files together before moving them to Trash. The SwiftUI window and Rust scanner run on your Mac.
 
-**Cleanup Review** finds installer files directly inside a chosen folder. Select an app to review its bundle and exact bundle-ID matches in your user Library’s Caches, Logs, and Preferences. Review each path before moving it to Trash. Shared files and APFS clones can make the space recovered differ from the size shown.
+![Siftmark scanning a sample studio archive. Camera exports use half of the measured space, followed by build artifacts and field recordings.](docs/images/folder-scan.png)
 
-## Using Siftmark
+## Get it running
 
-- Press **⌘O** to choose a folder. Click a column header to sort, or select a folder and choose **Inspect**. Press **⌘R** to rescan.
-- **⌘-click** selects individual rows, **Shift-click** selects a range, and **⌘A** selects all rows in the focused table.
-- **Reveal in Finder** sends the selected paths to Finder. **⌘Delete** opens a list of paths for review. **Move to Trash** acts on that list. Recover an item from the Trash using Finder’s **Put Back** command.
-- If a file is replaced after scanning, Siftmark skips it. Successful moves disappear from the table. Failed items stay selected. Refresh to review changed files before retrying.
-- Installer review checks the immediate folder for regular DMG, PKG, MPKG, XIP, and ISO files. App review checks exact bundle identifiers in Caches, Logs, and Preferences. A matching identifier alone does not establish exclusive ownership.
-- A **partial** size means the scanner encountered unreadable entries or a volume boundary. Symbolic links are measured without following them.
+**The current release is available as source.** You can build it on your Mac today. A notarized app download is pending. [Releases](https://github.com/alexgtmbot/siftmark/releases)
 
-## Build and run
-
-Install Rust with Cargo and the Xcode Command Line Tools on your Mac. From the repository root, run:
+You’ll need Apple’s Xcode Command Line Tools and a current stable Rust toolchain with Cargo. Run `xcode-select --install` if you need the Apple tools. [Install Rust](https://rustup.rs/)
 
 ```sh
-cargo test --locked
+git clone https://github.com/alexgtmbot/siftmark.git
+cd siftmark
 ./build.sh
 open dist/Siftmark.app
 ```
 
-The build targets macOS 14 or later on the build machine’s architecture. The app has been exercised on Apple Silicon with macOS 26. The default build uses a local ad-hoc signature.
+To keep it in Launchpad or Finder, copy `dist/Siftmark.app` to Applications. The build targets macOS 14 and later and compiles for your Mac’s architecture. Tested on Apple Silicon with macOS 26.
 
-## Package a public download
+## Take a first look
 
-On a Mac with a Developer ID Application certificate and matching private key, configure a notarytool keychain profile for the same developer team. Set `DEVELOPER_ID_APPLICATION` to the signing identity and `NOTARY_PROFILE` to the profile name. Run `./build.sh --release` to sign both executables with hardened runtime, submit the app for notarization, staple the ticket, and assess it with Gatekeeper. The versioned ZIP appears in `dist/` after these checks pass.
+1. Press **⌘O** and choose a folder. Its largest immediate children appear first. **Allocated** is the space an item occupies on disk. **Share of scan** shows its fraction of the measured total.
+2. Select a folder and click **Inspect** to go deeper. Use the up arrow to return to its parent, or **⌘R** to measure it again.
+3. **⌘-click** individual rows, **Shift-click** a range, or press **⌘A** in the table. Choose **Reveal in Finder** to see the selection in context.
+4. Click **Trash…** or press **⌘Delete** to review every selected path. **Cancel** leaves the files in place. After confirmation, you can use Finder’s **Put Back** on items in the Trash.
+
+![The native confirmation sheet lists the full paths of two selected items before either is moved to Trash.](docs/images/trash-review.png)
+
+## What Cleanup Review finds
+
+| Action | What appears |
+| --- | --- |
+| **Installers in Downloads** or **Installers in This Folder** | Regular DMG, PKG, MPKG, XIP, and ISO files directly in that folder. |
+| **Review App for Uninstall…** | The selected app plus exact bundle-ID matches in your Library’s Caches, Logs, and Preferences. Review those paths individually because apps can share data. |
+
+Siftmark checks each item’s identity before moving it. If a file was replaced after the scan, it stays in place. Successful moves drop out of the table and failed items remain selected. Refresh before retrying a changed file. Quit a running app before moving it or its related files.
+
+### Reading disk usage
+
+A **partial** result means the scanner encountered an unreadable entry or another mounted volume. It measures symbolic links without following them. Within each measured item, a hard-linked file is counted once. Separate rows can share storage, and APFS clones can share blocks. The displayed size is therefore an estimate of what deleting a row might recover. Items in Trash continue to occupy space.
+
+## Development
+
+The window and file actions live in [Window.swift](Window.swift). The scanner and its tests live in [src/main.rs](src/main.rs). Run the checks with:
+
+```sh
+cargo fmt --check
+cargo test --locked
+cargo clippy --locked -- -D warnings
+./build.sh
+```
+
+For a public binary, set `DEVELOPER_ID_APPLICATION` to your Developer ID Application signing identity and `NOTARY_PROFILE` to a notarytool keychain profile for the same team. Run `./build.sh --release`. The script signs the helper and app with hardened runtime, submits to Apple, staples the notarization ticket, and runs Gatekeeper assessment before writing the versioned ZIP to `dist/`.
 
 ## License
 
-[MIT](LICENSE)
+Siftmark is free and open source under the [MIT license](LICENSE).
