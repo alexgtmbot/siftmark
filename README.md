@@ -8,7 +8,9 @@ Find the folder that ate your disk space. Siftmark is a small native Mac app tha
 
 ## Get it running
 
-**The current release is available as source.** You can build it on your Mac today. A notarized app download is pending. [Releases](https://github.com/alexgtmbot/siftmark/releases)
+**[Download Siftmark for Apple Silicon](https://github.com/alexgtmbot/siftmark/releases/download/v1.1.0/Siftmark-1.1.0-arm64.zip)** for macOS 14 or later. Unzip the download, drag Siftmark into Applications, and open it. The release is signed by GTM Bot Inc. and notarized by Apple.
+
+### Build from source
 
 You’ll need Apple’s Xcode Command Line Tools and a current stable Rust toolchain with Cargo. Run `xcode-select --install` if you need the Apple tools. [Install Rust](https://rustup.rs/)
 
