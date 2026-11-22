@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Siftmark</title>
+  <defs>
+    <linearGradient id="slate" x2=".42" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#303f48"/><stop offset="1" stop-color="#101b23"/>
+    </linearGradient>
+    <linearGradient id="amber" x2=".25" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ffe18c"/><stop offset="1" stop-color="#ff984f"/>
+    </linearGradient>
+  </defs>
+  <rect x="84" y="98" width="856" height="856" rx="193" fill="#14212b" opacity=".18"/>
+  <rect x="84" y="78" width="856" height="856" rx="193" fill="url(#slate)"/>
+  <path d="M766 266 712 372H414l-39 77h255c74 0 112 66 79 131l-47 93c-27 52-63 79-127 79H246l54-107h267l44-87H358c-77 0-115-64-80-133l46-91c24-47 63-68 119-68Z" fill="url(#amber)"/>
+  <path d="M246 805h87l21-40h-88z" fill="#95bebc"/>
+</svg>

@@ -19,7 +19,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" dist
 cp target/release/siftmark-scan "$app/Contents/MacOS/"
 swiftc -target "$(uname -m)-apple-macos14.0" -parse-as-library -O Window.swift -o "$app/Contents/MacOS/Siftmark"
 cp Info.plist "$app/Contents/"
-cp LICENSE "$app/Contents/Resources/"
+cp art/Siftmark.icns LICENSE "$app/Contents/Resources/"
 sign() {
     if [ "$identity" = "-" ]; then
         codesign --force --sign - "$1"

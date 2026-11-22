@@ -1,3 +1,5 @@
+<img src="art/Siftmark.png" width="112" height="112" alt="Siftmark icon">
+
 # Siftmark
 
 Siftmark shows which files and folders occupy space on your Mac. Choose a folder to compare allocated sizes, inspect a subfolder, or reveal an item in Finder. The native macOS window uses a Rust scanner that runs locally.

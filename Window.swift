@@ -194,7 +194,7 @@ struct Browser: View {
                 }.padding(12)
             } else {
                 VStack(spacing: 14) {
-                    Image(systemName: "externaldrive").font(.system(size: 44)).foregroundStyle(.tint)
+                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 84, height: 84).accessibilityHidden(true)
                     Text("Inspect folder storage").font(.largeTitle.bold())
                     Text("See which files and folders use the most disk space.").foregroundStyle(.secondary)
                     Button("Choose Folder…", action: choose).buttonStyle(.borderedProminent)
