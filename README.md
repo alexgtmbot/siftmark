@@ -58,6 +58,10 @@ cargo clippy --locked -- -D warnings
 
 For a public binary, set `DEVELOPER_ID_APPLICATION` to your Developer ID Application signing identity and `NOTARY_PROFILE` to a notarytool keychain profile for the same team. Run `./build.sh --release`. The script signs the helper and app with hardened runtime, submits to Apple, staples the notarization ticket, and runs Gatekeeper assessment before writing the versioned ZIP to `dist/`.
 
+## Contributing
+
+Found a scan that looks wrong, or have an idea for a cleanup rule? The [contributor guide](CONTRIBUTING.md) covers bug reports, local testing, and opening a pull request.
+
 ## License
 
 Siftmark is free and open source under the [MIT license](LICENSE).
