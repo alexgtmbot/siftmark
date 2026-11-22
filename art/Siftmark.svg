@@ -1,15 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <title>Siftmark</title>
-  <defs>
-    <linearGradient id="slate" x2=".42" y2="1" gradientUnits="objectBoundingBox">
-      <stop stop-color="#303f48"/><stop offset="1" stop-color="#101b23"/>
-    </linearGradient>
-    <linearGradient id="amber" x2=".25" y2="1" gradientUnits="objectBoundingBox">
-      <stop stop-color="#ffe18c"/><stop offset="1" stop-color="#ff984f"/>
-    </linearGradient>
-  </defs>
-  <rect x="84" y="98" width="856" height="856" rx="193" fill="#14212b" opacity=".18"/>
-  <rect x="84" y="78" width="856" height="856" rx="193" fill="url(#slate)"/>
-  <path d="M766 266 712 372H414l-39 77h255c74 0 112 66 79 131l-47 93c-27 52-63 79-127 79H246l54-107h267l44-87H358c-77 0-115-64-80-133l46-91c24-47 63-68 119-68Z" fill="url(#amber)"/>
-  <path d="M246 805h87l21-40h-88z" fill="#95bebc"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 64 64">
+<title>Siftmark disk block viewer</title>
+<g stroke="#282d30" stroke-width="1.8" stroke-linejoin="round">
+<path fill="#999d9a" d="M5 39 15 12h34l10 27v12l-3 3H8l-3-3z"/>
+<path fill="#e2e1d9" d="M5 39 15 12h34l10 27-3 3H8z"/>
+<path fill="#b6b8b2" d="M5 40l3 2h48l3-2v10l-3 3H8l-3-3z"/>
+</g>
+<path fill="#faf9ef" d="m8 38 9-24h29l1 2H18l-8 22z"/>
+<g transform="matrix(1 0 -.31 .9 4 0)">
+<path fill="#3e494c" d="M19 19h25v18H19z"/>
+<path fill="#84b4ab" d="M20 20h12v10H20z"/>
+<path fill="#e1ae69" d="M33 20h10v6H33z"/>
+<path fill="#a1b6bf" d="M33 27h10v3H33zM20 31h7v5h-7z"/>
+<path fill="#c0c8bf" d="M28 31h15v5H28z"/>
+</g>
+<path fill="#515854" d="M11 45h24v2H11zM11 48h24v1H11z"/>
+<path fill="#38433f" d="M46 45h7v4h-7z"/><path fill="#a4d680" d="M47 46h5v2h-5z"/>
 </svg>

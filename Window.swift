@@ -7,6 +7,11 @@ private enum Review: Equatable {
     var isUninstall: Bool { if case .uninstall = self { return true }; return false }
 }
 
+private struct TrashBatch: Identifiable {
+    let id = UUID()
+    let items: [Item]
+}
+
 private struct DiskIdentity: Equatable {
     let device: dev_t
     let inode: ino_t
@@ -42,12 +47,12 @@ struct SiftmarkApp: App {
 struct Browser: View {
     @State private var root: URL?
     @State private var rows = [Item]()
-    @State private var selected: URL?
+    @State private var selected = Set<URL>()
+    @State private var batch: TrashBatch?
     @State private var sort = [KeyPathComparator(\Item.bytes, order: .reverse)]
     @State private var worker: Process?
     @State private var message = "Choose a folder to inspect its disk usage."
     @State private var total: Double = 0
-    @State private var confirm = false
 
     @State private var review = Review.folder
     @State private var reviewError: String?
@@ -56,7 +61,7 @@ struct Browser: View {
         review = mode
         if let worker, worker.isRunning { worker.terminate() }
         root = url
-        selected = nil
+        selected.removeAll()
         rows = []
         message = "Scanning…"
         let task = Process()
@@ -117,6 +122,34 @@ struct Browser: View {
             return
         }
         scan(app, as: .uninstall(id))
+    }
+
+    private func trash(_ items: [Item]) {
+        var moved = Set<URL>()
+        var failures = [String]()
+        for item in items {
+            if review.isUninstall && NSWorkspace.shared.runningApplications.contains(where: {
+                $0.bundleURL?.resolvingSymlinksInPath() == root?.resolvingSymlinksInPath()
+            }) {
+                failures.append("Quit the app before moving it or its related files to Trash.")
+                break
+            }
+            guard let identity = item.identity, identity == DiskIdentity(item.url) else {
+                failures.append("\(item.url.path) changed since the scan.")
+                continue
+            }
+            do {
+                try FileManager.default.trashItem(at: item.url, resultingItemURL: nil)
+                moved.insert(item.url)
+            } catch {
+                failures.append("\(item.url.path): \(error.localizedDescription)")
+            }
+        }
+        rows.removeAll { moved.contains($0.url) }
+        selected.subtract(moved)
+        total = rows.reduce(0) { $0 + Double($1.bytes) }
+        message = "Moved \(moved.count) to Trash · \(rows.count) remaining"
+        if !failures.isEmpty { reviewError = message + "\n" + failures.joined(separator: "\n") }
     }
 
     private var reviewActions: some View {
@@ -184,13 +217,15 @@ struct Browser: View {
                 }
                 Divider()
                 HStack {
-                    Text(message).font(.callout).foregroundStyle(.secondary)
+                    Text(selected.isEmpty ? message : "\(selected.count) selected").font(.callout).foregroundStyle(.secondary)
                     Spacer()
-                    Button("Inspect") { if let selected { scan(selected) } }
-                        .disabled(review.isUninstall || !rows.contains { $0.url == selected && $0.folder })
-                    Button("Reveal in Finder") { if let selected { NSWorkspace.shared.activateFileViewerSelecting([selected]) } }
-                        .disabled(selected == nil)
-                    Button("Trash…") { confirm = true }.disabled(selected == nil)
+                    Button("Inspect") { if let url = selected.first { scan(url) } }
+                        .disabled(review.isUninstall || selected.count != 1 || !rows.contains { selected.contains($0.url) && $0.folder })
+                    Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting(Array(selected)) }
+                        .disabled(selected.isEmpty)
+                    Button("Trash…") {
+                        batch = TrashBatch(items: rows.filter { selected.contains($0.url) })
+                    }.disabled(selected.isEmpty).keyboardShortcut(.delete, modifiers: .command)
                 }.padding(12)
             } else {
                 VStack(spacing: 14) {
@@ -216,32 +251,22 @@ struct Browser: View {
             }
         }
         .onDisappear { if let worker, worker.isRunning { worker.terminate() } }
-        .alert("Move “\(selected?.lastPathComponent ?? "")” to Trash?", isPresented: $confirm) {
-            Button("Cancel", role: .cancel) {}
-            Button("Move to Trash", role: .destructive) {
-                guard let selected, let root else { return }
-                do {
-                    guard let item = rows.first(where: { $0.url == selected }),
-                          let identity = item.identity, identity == DiskIdentity(selected) else {
-                        reviewError = "This item changed after the scan. Refresh before moving it to Trash."
-                        return
+        .sheet(item: $batch) { request in
+            let pending = request.items
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Move \(pending.count == 1 ? pending[0].name : "\(pending.count) items") to Trash?")
+                    .font(.title2.bold())
+                List(pending) { item in Text(item.url.path).textSelection(.enabled) }
+                HStack {
+                    Spacer()
+                    Button("Cancel") { batch = nil }.keyboardShortcut(.cancelAction)
+                    Button("Move to Trash", role: .destructive) {
+                        batch = nil
+                        trash(pending)
                     }
-                    if review.isUninstall && NSWorkspace.shared.runningApplications.contains(where: {
-                        $0.bundleURL?.resolvingSymlinksInPath() == root.resolvingSymlinksInPath()
-                    }) {
-                        reviewError = "Quit the app before moving it or its related files to Trash."
-                        return
-                    }
-                    try FileManager.default.trashItem(at: selected, resultingItemURL: nil)
-                    if review.isUninstall {
-                        rows.removeAll { $0.id == selected }
-                        self.selected = nil
-                        total = rows.reduce(0) { $0 + Double($1.bytes) }
-                        message = "Moved to Trash · " + selected.lastPathComponent
-                    } else { scan(root, as: review) }
-                } catch { message = error.localizedDescription }
-            }
-        } message: { Text(selected?.path ?? "") }
+                }
+            }.padding().frame(minWidth: 500, minHeight: 240)
+        }
         .alert("Review unavailable", isPresented: Binding(get: { reviewError != nil }, set: { if !$0 { reviewError = nil } })) {
             Button("OK") { reviewError = nil }
         } message: { Text(reviewError ?? "") }
