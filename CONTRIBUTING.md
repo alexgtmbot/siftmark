@@ -14,3 +14,5 @@ Bug reports, documentation fixes, and pull requests are welcome. For a new clean
 4. Open a pull request against `main`. Describe the user-visible change and how you tested it. A before-and-after screenshot helps reviewers assess visual changes.
 
 When testing Trash, use disposable files. Verify that cancel preserves them, confirmation moves only the reviewed paths, and a file replaced between scan and confirmation stays in place.
+
+Pull requests targeting `main` run the **macOS build and test** check. It checks Rust formatting, lint, and tests, builds the native app, then extracts the ZIP and exercises the bundled scanner. Release signing credentials stay on the maintainer’s Mac.
