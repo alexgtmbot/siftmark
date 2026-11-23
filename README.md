@@ -8,7 +8,7 @@ Find the folder that ate your disk space. Siftmark is a small native Mac app tha
 
 ## Get it running
 
-**[Download Siftmark for Apple Silicon](https://github.com/alexgtmbot/siftmark/releases/download/v1.1.0/Siftmark-1.1.0-arm64.zip)** for macOS 14 or later. Unzip the download, drag Siftmark into Applications, and open it. The release is signed by GTM Bot Inc. and notarized by Apple.
+**[Download Siftmark for Apple Silicon](https://github.com/alexgtmbot/siftmark/releases/download/v1.1.1/Siftmark-1.1.1-arm64.zip)** for macOS 14 or later. Unzip the download, drag Siftmark into Applications, and open it. The release is signed by GTM Bot Inc. and notarized by Apple.
 
 ### Build from source
 
