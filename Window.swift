@@ -56,10 +56,12 @@ struct Browser: View {
 
     @State private var review = Review.folder
     @State private var reviewError: String?
+    @State private var isTrashing = false
     @State private var deniedItems = [URL]()
     @State private var errorTitle = "Review unavailable"
 
     private func scan(_ url: URL, as mode: Review = .folder) {
+        guard !isTrashing else { return }
         review = mode
         if let worker, worker.isRunning { worker.terminate() }
         root = url
@@ -128,7 +130,39 @@ struct Browser: View {
         scan(app, as: .uninstall(id))
     }
 
-    private func trash(_ items: [Item]) {
+    private static func moveToTrash(_ item: Item) throws {
+        do {
+            try FileManager.default.trashItem(at: item.url, resultingItemURL: nil)
+            return
+        } catch {
+            let cause = error as NSError
+            let denied = (cause.domain == NSCocoaErrorDomain && [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cause.code))
+                || (cause.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM)].contains(cause.code))
+            guard denied else { throw error }
+        }
+
+        guard let identity = item.identity, identity == DiskIdentity(item.url) else {
+            throw NSError(domain: "Siftmark", code: 1, userInfo: [NSLocalizedDescriptionKey: "This item changed since the scan."])
+        }
+        // Pass the exact file URL as an Apple event descriptor, independent of Finder selection.
+        let event = NSAppleEventDescriptor(eventClass: kAECoreSuite, eventID: kAEDelete,
+            targetDescriptor: NSAppleEventDescriptor(bundleIdentifier: "com.apple.finder"),
+            returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID))
+        let target = NSAppleEventDescriptor(fileURL: item.url)
+        guard let alias = target.coerce(toDescriptorType: typeAlias) else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        event.setParam(alias, forKeyword: keyDirectObject)
+        let reply = try event.sendEvent(options: [.waitForReply, .canInteract], timeout: 600)
+        if let number = reply.paramDescriptor(forKeyword: keyErrorNumber)?.int32Value, number != 0 {
+            let detail = reply.paramDescriptor(forKeyword: keyErrorString)?.stringValue
+            throw NSError(domain: NSOSStatusErrorDomain, code: Int(number),
+                userInfo: [NSLocalizedDescriptionKey: detail ?? "Finder could not move this item to Trash (\(number))."])
+        }
+    }
+
+    @MainActor private func trash(_ items: [Item]) async {
+        defer { isTrashing = false }
         var moved = Set<URL>()
         var failures = [String]()
         deniedItems = []
@@ -144,13 +178,21 @@ struct Browser: View {
                 continue
             }
             do {
-                try FileManager.default.trashItem(at: item.url, resultingItemURL: nil)
+                try await Task.detached { try Self.moveToTrash(item) }.value
                 moved.insert(item.url)
             } catch {
                 let cause = error as NSError
                 if (cause.domain == NSCocoaErrorDomain && [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cause.code)) ||
                     (cause.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM)].contains(cause.code)) {
                     deniedItems.append(item.url)
+                }
+                if cause.domain == NSOSStatusErrorDomain && cause.code == -128 {
+                    failures.append("Canceled. Remaining items were left in place.")
+                    break
+                }
+                if cause.domain == NSOSStatusErrorDomain && cause.code == -1743 {
+                    failures.append("Allow Siftmark to control Finder in System Settings → Privacy & Security → Automation, then retry.")
+                    break
                 }
                 failures.append("\(item.url.path): \(error.localizedDescription)")
             }
@@ -265,6 +307,7 @@ struct Browser: View {
                     .keyboardShortcut("o").help("Choose folder (⌘O)")
             }
         }
+        .disabled(isTrashing)
         .onDisappear { if let worker, worker.isRunning { worker.terminate() } }
         .sheet(item: $batch) { request in
             let pending = request.items
@@ -277,7 +320,8 @@ struct Browser: View {
                     Button("Cancel") { batch = nil }.keyboardShortcut(.cancelAction)
                     Button("Move to Trash", role: .destructive) {
                         batch = nil
-                        trash(pending)
+                        isTrashing = true
+                        Task { await trash(pending) }
                     }
                 }
             }.padding().frame(minWidth: 500, minHeight: 240)
