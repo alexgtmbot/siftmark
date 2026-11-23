@@ -2,6 +2,7 @@
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>Siftmark</string>
 <key>CFBundleIdentifier</key><string>bot.gtm.siftmark</string>
+<key>NSAppleEventsUsageDescription</key><string>Siftmark asks Finder to move a confirmed item to Trash when macOS requires additional permission.</string>
 <key>CFBundleIconFile</key><string>Siftmark.icns</string>
 <key>CFBundleName</key><string>Siftmark</string>
 <key>CFBundlePackageType</key><string>APPL</string>

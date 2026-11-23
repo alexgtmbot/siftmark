@@ -39,6 +39,8 @@ To keep it in Launchpad or Finder, copy `dist/Siftmark.app` to Applications. The
 | **Installers in Downloads** or **Installers in This Folder** | Regular DMG, PKG, MPKG, XIP, and ISO files directly in that folder. |
 | **Review App for Uninstall…** | The selected app plus exact bundle-ID matches in your Library’s Caches, Logs, and Preferences. Review those paths individually because apps can share data. |
 
+If macOS denies a confirmed Trash request, Siftmark asks Finder to move that specific item. macOS may prompt for Finder automation access or administrator approval. Cancel to stop the batch. System-protected items can still be refused.
+
 Siftmark checks each item’s identity before moving it. If a file was replaced after the scan, it stays in place. Successful moves drop out of the table and failed items remain selected. Refresh before retrying a changed file. Quit a running app before moving it or its related files.
 
 ### Reading disk usage

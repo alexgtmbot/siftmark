@@ -22,13 +22,13 @@ cp Info.plist "$app/Contents/"
 cp art/Siftmark.icns LICENSE "$app/Contents/Resources/"
 sign() {
     if [ "$identity" = "-" ]; then
-        codesign --force --sign - "$1"
+        codesign --force --sign - "$@"
     else
-        codesign --force --options runtime --timestamp --sign "$identity" "$1"
+        codesign --force --options runtime --timestamp --sign "$identity" "$@"
     fi
 }
 sign "$app/Contents/MacOS/siftmark-scan"
-sign "$app"
+sign --entitlements Siftmark.entitlements "$app"
 codesign --verify --deep --strict "$app"
 if [ "$#" -eq 1 ]; then
     ditto -c -k --keepParent "$app" "$stage/submission.zip"
