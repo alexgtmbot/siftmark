@@ -56,6 +56,8 @@ struct Browser: View {
 
     @State private var review = Review.folder
     @State private var reviewError: String?
+    @State private var deniedItems = [URL]()
+    @State private var errorTitle = "Review unavailable"
 
     private func scan(_ url: URL, as mode: Review = .folder) {
         review = mode
@@ -118,6 +120,8 @@ struct Browser: View {
         panel.prompt = "Review"
         guard panel.runModal() == .OK, let app = panel.url else { return }
         guard let id = Bundle(url: app)?.bundleIdentifier else {
+            errorTitle = "Review unavailable"
+            deniedItems = []
             reviewError = "This app has no readable bundle identifier."
             return
         }
@@ -127,6 +131,7 @@ struct Browser: View {
     private func trash(_ items: [Item]) {
         var moved = Set<URL>()
         var failures = [String]()
+        deniedItems = []
         for item in items {
             if review.isUninstall && NSWorkspace.shared.runningApplications.contains(where: {
                 $0.bundleURL?.resolvingSymlinksInPath() == root?.resolvingSymlinksInPath()
@@ -142,6 +147,11 @@ struct Browser: View {
                 try FileManager.default.trashItem(at: item.url, resultingItemURL: nil)
                 moved.insert(item.url)
             } catch {
+                let cause = error as NSError
+                if (cause.domain == NSCocoaErrorDomain && [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cause.code)) ||
+                    (cause.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM)].contains(cause.code)) {
+                    deniedItems.append(item.url)
+                }
                 failures.append("\(item.url.path): \(error.localizedDescription)")
             }
         }
@@ -149,7 +159,12 @@ struct Browser: View {
         selected.subtract(moved)
         total = rows.reduce(0) { $0 + Double($1.bytes) }
         message = "Moved \(moved.count) to Trash · \(rows.count) remaining"
-        if !failures.isEmpty { reviewError = message + "\n" + failures.joined(separator: "\n") }
+        if !failures.isEmpty {
+            errorTitle = "Couldn’t move all selected items to Trash"
+            reviewError = ([message] + failures + (deniedItems.isEmpty ? [] : [
+                "Reveal the blocked items in Finder and choose File → Move to Trash. Finder may ask for administrator approval."
+            ])).joined(separator: "\n\n")
+        }
     }
 
     private var reviewActions: some View {
@@ -267,8 +282,11 @@ struct Browser: View {
                 }
             }.padding().frame(minWidth: 500, minHeight: 240)
         }
-        .alert("Review unavailable", isPresented: Binding(get: { reviewError != nil }, set: { if !$0 { reviewError = nil } })) {
-            Button("OK") { reviewError = nil }
+        .alert(errorTitle, isPresented: Binding(get: { reviewError != nil }, set: { if !$0 { reviewError = nil } })) {
+            if !deniedItems.isEmpty {
+                Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting(deniedItems) }
+            }
+            Button("OK", role: .cancel) { reviewError = nil }
         } message: { Text(reviewError ?? "") }
     }
 }
